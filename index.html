@@ -1,0 +1,1216 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAISAN — AI Face Shape Detector</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg: #090811;
+  --panel: #13111f;
+  --panel2: #1b172b;
+  --purple: #9b70ff;
+  --purple2: #7044d9;
+  --text: #f5f1ff;
+  --muted: #aaa2bc;
+  --border: #302842;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 15% 0%, #25153e 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 30%, #17102c 0%, transparent 35%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  padding: 23px 7%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ffffff12;
+}
+
+.logo {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: white;
+}
+
+.logo span { color: var(--purple); }
+
+.header-tag {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+main {
+  width: min(1120px, 92%);
+  margin: 45px auto 70px;
+}
+
+.hero { text-align: center; margin-bottom: 35px; }
+
+.eyebrow {
+  color: var(--purple);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+h1 {
+  font-size: clamp(32px, 5vw, 51px);
+  margin: 13px 0;
+  letter-spacing: -2px;
+}
+
+.hero p {
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 570px;
+  margin: auto;
+  font-size: 14px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.panel {
+  background: linear-gradient(145deg, #191528, #100e19);
+  border: 1px solid var(--border);
+  border-radius: 19px;
+  padding: 23px;
+  min-width: 0;
+}
+
+.panel h2 {
+  font-size: 17px;
+  margin: 0 0 17px;
+}
+
+.preview {
+  width: 100%;
+  min-height: 300px;
+  background: #090811;
+  border: 1px solid #33294b;
+  border-radius: 13px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview img, .preview video {
+  display: none;
+  width: 100%;
+  max-height: 440px;
+  object-fit: contain;
+}
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.placeholder {
+  color: #716980;
+  text-align: center;
+  padding: 25px;
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+button, .upload-label {
+  border: 1px solid #59417f;
+  background: #211832;
+  color: white;
+  padding: 12px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  transition: .2s;
+}
+
+button:hover, .upload-label:hover {
+  background: #382354;
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: linear-gradient(120deg, #8e5bf0, #6037bd);
+  border: 0;
+}
+
+.primary:hover { background: #986cf0; }
+
+input[type=file] { display: none; }
+
+.status {
+  margin-top: 13px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.result-box {
+  background: #0e0b18;
+  border: 1px solid #34264e;
+  padding: 20px;
+  border-radius: 13px;
+  margin-bottom: 17px;
+}
+
+.result-label {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+
+.face-result {
+  color: #c5a7ff;
+  font-size: 29px;
+  font-weight: 800;
+  margin-top: 8px;
+}
+
+.result-description {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.measurements {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.measurement {
+  background: var(--panel2);
+  border: 1px solid #30263f;
+  border-radius: 11px;
+  padding: 13px;
+}
+
+.measurement span {
+  color: var(--muted);
+  font-size: 10px;
+  display: block;
+  margin-bottom: 7px;
+}
+
+.measurement strong { font-size: 17px; }
+
+.recommendations { margin-top: 23px; }
+
+.recommendations h2 { margin-bottom: 7px; }
+
+.rec-intro {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 15px;
+}
+
+.hair-card {
+  background: linear-gradient(120deg, #201832, #151120);
+  border: 1px solid #38294d;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+.hair-image-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: #0b0912;
+  border: 1px solid #38294d;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 13px;
+}
+
+.hair-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+
+.hair-image-credit {
+  display: block;
+  color: #9387a8;
+  font-size: 10px;
+  margin-top: 7px;
+  text-decoration: none;
+}
+
+.hair-image-credit:hover {
+  color: #c5a7ff;
+  text-decoration: underline;
+}
+
+.hair-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hair-name { font-weight: 700; font-size: 14px; }
+
+.hair-length {
+  color: #c4a5ff;
+  background: #39265b;
+  border-radius: 20px;
+  padding: 5px 9px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.hair-card p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+
+.why { color: #d9c9ff !important; }
+
+.tip {
+  border-left: 3px solid var(--purple);
+  padding: 12px 14px;
+  background: #211831;
+  color: #cfc3e4;
+  font-size: 12px;
+  line-height: 1.7;
+  border-radius: 0 9px 9px 0;
+  margin-top: 16px;
+}
+
+.analysis-extra { margin-top: 18px; }
+
+.score-card, .detail-card, .compare-card {
+  background: #100d1b;
+  border: 1px solid #34264e;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+.score-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.score-line strong { color: #d7c2ff; font-size: 20px; }
+
+.score-track {
+  height: 8px;
+  background: #2a2238;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-top: 11px;
+}
+
+.score-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg,#7044d9,#bd9aff);
+  border-radius: 20px;
+  transition: width .35s;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.detail-item {
+  background: var(--panel2);
+  border: 1px solid #30263f;
+  border-radius: 10px;
+  padding: 11px;
+}
+
+.detail-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+
+.detail-item strong { font-size: 13px; }
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.small-note {
+  color: #8f87a0;
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 9px;
+}
+
+.disclaimer {
+  color: #827a91;
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 17px;
+}
+
+.section-title {
+  margin: 27px 0 10px;
+  font-size: 13px;
+  color: #c8b5ee;
+}
+
+.empty-state {
+  color: #81798d;
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 15px 0;
+}
+
+footer {
+  text-align: center;
+  color: #716980;
+  font-size: 11px;
+  padding: 25px;
+  border-top: 1px solid #ffffff10;
+}
+
+@media(max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+  main { margin-top: 30px; }
+  header { padding: 18px 5%; }
+  .header-tag { font-size: 9px; }
+  .panel { padding: 17px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">KAI<span>SAN</span></div>
+  <div class="header-tag">AI FACE ANALYSIS · V6</div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="eyebrow">DISCOVER YOUR LOOK</div>
+    <h1>Find Your Face Shape.</h1>
+    <p>Analyze your facial proportions, compare estimated face-shape patterns, and explore hairstyle ideas that may complement your look.</p>
+  </section>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>01 / Face Scanner</h2>
+
+      <div class="preview" id="preview">
+        <div class="placeholder" id="placeholder">
+          <div style="font-size:36px;margin-bottom:10px">◎</div>
+          Upload a clear front-facing photo<br>or start your webcam
+        </div>
+        <img id="photo" alt="Uploaded face">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+      </div>
+
+      <div class="controls">
+        <label class="upload-label primary" for="fileInput">Upload Photo</label>
+        <input id="fileInput" type="file" accept="image/*">
+        <button id="cameraButton">Start Camera</button>
+        <button id="stopButton">Stop Camera</button>
+      </div>
+
+      <div class="status" id="status">Waiting for an image or camera.</div>
+    </section>
+
+    <section class="panel">
+      <h2>02 / Your Analysis</h2>
+
+      <div class="result-box">
+        <div class="result-label">ESTIMATED FACE SHAPE</div>
+        <div class="face-result" id="faceShape">Not detected</div>
+        <div class="result-description" id="faceDescription">
+          Your estimated face shape will appear here after scanning.
+        </div>
+      </div>
+
+      <div class="section-title">FACIAL PROPORTIONS</div>
+      <div class="measurements">
+        <div class="measurement">
+          <span>Face length</span>
+          <strong id="lengthValue">—</strong>
+        </div>
+        <div class="measurement">
+          <span>Cheek width</span>
+          <strong id="cheekValue">—</strong>
+        </div>
+        <div class="measurement">
+          <span>Forehead width</span>
+          <strong id="foreheadValue">—</strong>
+        </div>
+        <div class="measurement">
+          <span>Jaw width</span>
+          <strong id="jawValue">—</strong>
+        </div>
+      </div>
+
+      <div class="analysis-extra">
+        <div class="section-title">SHAPE MATCH INDICATOR</div>
+        <div class="score-card">
+          <div class="score-line">
+            <span id="scoreLabel">Heuristic pattern match</span>
+            <strong id="matchScore">—</strong>
+          </div>
+          <div class="score-track">
+            <div class="score-fill" id="scoreFill"></div>
+          </div>
+          <div class="small-note">This is a relative similarity indicator from simple measurement rules, not a scientifically calibrated probability or an AI confidence score.</div>
+        </div>
+
+        <div class="section-title">DETAILED PROPORTION NOTES</div>
+        <div class="detail-card">
+          <div class="detail-grid" id="detailGrid">
+            <div class="detail-item">
+              <span>Face length vs cheek width</span>
+              <strong>Waiting for scan</strong>
+            </div>
+            <div class="detail-item">
+              <span>Forehead vs cheek width</span>
+              <strong>Waiting for scan</strong>
+            </div>
+            <div class="detail-item">
+              <span>Jaw vs cheek width</span>
+              <strong>Waiting for scan</strong>
+            </div>
+            <div class="detail-item">
+              <span>Overall balance</span>
+              <strong>Waiting for scan</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">CLOSEST ALTERNATIVE</div>
+        <div class="compare-card" id="alternativeShape">
+          Scan your face to compare the closest alternative shape.
+        </div>
+
+        <div class="action-row">
+          <button id="downloadButton" class="primary" disabled>Download Analysis Report</button>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        Measurements are relative ratios estimated from visible facial landmarks. Camera angle, lighting, hair, and expression can affect the result. Face-shape labels are heuristic estimates, not guaranteed classifications or results from a trained face-shape AI model.
+      </div>
+    </section>
+  </div>
+
+  <section class="panel recommendations">
+    <h2>03 / Your Hairstyle Recommendations</h2>
+    <p class="rec-intro" id="recIntro">
+      Scan your face to unlock hairstyle suggestions for short, medium, and long hair.
+    </p>
+
+    <div id="hairResults">
+      <div class="empty-state">Your personalized hairstyle suggestions will appear here after face detection.</div>
+    </div>
+
+    <div class="tip" id="generalTip">
+      Tip: Use a clear, straight-on photo with your hair pulled away from your face for more consistent measurements.
+    </div>
+  </section>
+</main>
+
+<footer>
+  KAISAN · Made by Afeef Kaisan Sikder
+</footer>
+
+<script>
+const photo = document.getElementById("photo");
+const video = document.getElementById("video");
+const canvas = document.getElementById("overlay");
+const ctx = canvas.getContext("2d");
+const placeholder = document.getElementById("placeholder");
+const statusText = document.getElementById("status");
+
+let faceMesh;
+let cameraStream = null;
+let cameraRunning = false;
+let processing = false;
+let lastResults = null;
+let currentMode = "none";
+let latestAnalysis = null;
+
+const $ = id => document.getElementById(id);
+
+function distance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function setStatus(message) {
+  statusText.textContent = message;
+}
+
+function resetCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function setupCanvas(width, height) {
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+}
+
+function getFaceMeasurements(landmarks) {
+  const faceLength = distance(landmarks[10], landmarks[152]);
+  const cheekWidth = distance(landmarks[234], landmarks[454]);
+  const foreheadWidth = distance(landmarks[127], landmarks[356]);
+  const jawWidth = distance(landmarks[172], landmarks[397]);
+
+  return {
+    faceLength,
+    cheekWidth,
+    foreheadWidth,
+    jawWidth,
+    ratio: faceLength / cheekWidth,
+    foreheadRatio: foreheadWidth / cheekWidth,
+    jawRatio: jawWidth / cheekWidth
+  };
+}
+
+function classifyFace(m) {
+  const { ratio, foreheadRatio, jawRatio } = m;
+
+  if (ratio >= 1.48) {
+    return {
+      name: "Oblong",
+      description: "Your face appears noticeably longer than it is wide. The forehead, cheeks, and jaw may have a relatively elongated appearance."
+    };
+  }
+
+  if (ratio < 1.20 && jawRatio > 0.82 && foreheadRatio > 0.82) {
+    return {
+      name: "Round",
+      description: "Your face appears relatively short and wide, with softer proportions and a rounded overall outline."
+    };
+  }
+
+  if (ratio < 1.30 && jawRatio > 0.88 && foreheadRatio > 0.86) {
+    return {
+      name: "Square",
+      description: "Your measurements suggest a relatively broad jaw and balanced facial proportions."
+    };
+  }
+
+  if (foreheadRatio > 0.94 && jawRatio < 0.78) {
+    return {
+      name: "Heart",
+      description: "Your forehead appears wider than your jaw, giving your face a potentially heart-shaped proportion."
+    };
+  }
+
+  if (jawRatio < 0.76 && foreheadRatio < 0.88) {
+    return {
+      name: "Diamond",
+      description: "Your cheek area appears wider compared with your forehead and jaw."
+    };
+  }
+
+  return {
+    name: "Oval",
+    description: "Your proportions appear relatively balanced, with a face length greater than its cheek width and a softer jaw."
+  };
+}
+
+const hairstyleData = {
+  Oval: {
+    intro: "Oval proportions are relatively balanced, so many hairstyles may work well.",
+    tip: "Experiment with different lengths and fringe styles. Your personal hair texture and density matter just as much as face shape.",
+    styles: [
+      ["Textured Crop", "Short", "A textured top with shorter sides.", "Its controlled sides and textured top can work with balanced facial proportions."],
+      ["Curtain Fringe", "Medium", "A center or slightly off-center part with hair falling toward the sides.", "The framing effect can complement balanced proportions."],
+      ["Flow Hairstyle", "Long", "Medium-to-long hair with natural movement.", "The length adds movement without necessarily overwhelming the face."]
+    ]
+  },
+  Round: {
+    intro: "These styles aim to add some visual height and definition.",
+    tip: "A little height on top and less bulk around the sides can create a more elongated visual effect.",
+    styles: [
+      ["Textured Quiff", "Short", "Short sides with a lifted, textured front.", "The height can create a longer-looking silhouette."],
+      ["Side-Part Hairstyle", "Medium", "A side part with some volume on top.", "The diagonal part can add visual structure."],
+      ["Layered Flow", "Long", "Longer layers with controlled volume around the sides.", "Layers can add movement while avoiding excessive width at cheek level."]
+    ]
+  },
+  Square: {
+    intro: "These suggestions explore both structured and softer styles.",
+    tip: "You can choose to emphasize your jawline with clean styles or soften the overall look with layers and a fringe.",
+    styles: [
+      ["Crew Cut", "Short", "A clean, short haircut with a neat outline.", "Its structured shape can complement a defined jaw."],
+      ["Textured Fringe", "Medium", "A textured front with natural movement.", "The fringe can soften the visual outline of the forehead."],
+      ["Layered Medium Flow", "Long", "Longer layers with a relaxed finish.", "The movement can balance a strong-looking jawline."]
+    ]
+  },
+  Heart: {
+    intro: "These styles aim to balance a wider-looking forehead with the lower face.",
+    tip: "A little fringe or side volume may help balance the overall silhouette.",
+    styles: [
+      ["French Crop", "Short", "A short cut with a forward fringe.", "The fringe can visually reduce the emphasis on forehead width."],
+      ["Curtain Hairstyle", "Medium", "A center-parted fringe that frames the face.", "Face-framing strands can distribute visual attention."],
+      ["Layered Flow", "Long", "Longer hair with layers around the sides.", "The added movement around the lower face can create a balanced appearance."]
+    ]
+  },
+  Diamond: {
+    intro: "These suggestions aim to complement prominent cheek proportions.",
+    tip: "Try some texture around the forehead and temples rather than very tight sides.",
+    styles: [
+      ["Textured Fringe", "Short", "A short cut with a soft, textured front.", "The fringe can add visual balance around the upper face."],
+      ["Curtain Fringe", "Medium", "A loose center part with face-framing strands.", "The framing can soften the transition from forehead to cheeks."],
+      ["Layered Flow", "Long", "Long hair with natural layers.", "Layers can add visual width around the forehead and jaw area."]
+    ]
+  },
+  Oblong: {
+    intro: "These styles aim to add some visual width and avoid making the face appear longer.",
+    tip: "Avoid relying only on very tall volume. A fringe or side volume may create a more balanced look.",
+    styles: [
+      ["French Crop", "Short", "A short cut with a forward fringe.", "The fringe can visually shorten the appearance of the forehead."],
+      ["Curtain Hairstyle", "Medium", "A medium-length center part with natural volume.", "The side volume can add width to the overall silhouette."],
+      ["Layered Medium-Long", "Long", "Longer hair with layers and controlled volume.", "The layers can create width and movement rather than extra height."]
+    ]
+  }
+};
+
+const hairstyleImages = {
+  "Textured Crop": {
+    image: "https://beyooman.com/uploads/products/1/ingredients/482703488ed6476084043298120ec381.png",
+    source: "https://beyooman.com/urun/texture-powder",
+    credit: "Beyooman"
+  },
+  "Curtain Fringe": {
+    image: "https://styleobsidian.com/wp-content/uploads/2022/02/Curtain-Bang-Hairstyles-for-Men.webp",
+    source: "https://styleobsidian.com/curtain-bang-hairstyles-for-men/",
+    credit: "Style Obsidian"
+  },
+  "Curtain Hairstyle": {
+    image: "https://allmenshaircuts.com/uploads/hairstyles/curtains/621.jpg",
+    source: "https://allmenshaircuts.com/es/cortes-de-pelo-hombre/curtains/corte-de-pelo-con-raya-al-medio-para-hombre-guia-de-estilo-621/",
+    credit: "All Men's Haircuts"
+  },
+  "Flow Hairstyle": {
+    image: "https://vagazine.com/vaga_v3/wp-content/uploads/2026/01/classic-flow-haircut-3.jpg",
+    source: "https://vagazine.com/haircuts-for-men/flow-haircut/",
+    credit: "Vagazine"
+  },
+  "Layered Flow": {
+    image: "https://cdn.righthair.ai/right-hair/image/flow-haircut/bro-flow-haircut-men.webp",
+    source: "https://righthair.ai/hairstyles/flow-haircut/",
+    credit: "RightHair"
+  },
+  "Layered Medium Flow": {
+    image: "https://vagazine.com/vaga_v3/wp-content/uploads/2026/01/classic-flow-haircut-3.jpg",
+    source: "https://vagazine.com/haircuts-for-men/flow-haircut/",
+    credit: "Vagazine"
+  },
+  "Layered Medium-Long": {
+    image: "https://cdn.righthair.ai/right-hair/image/flow-haircut/bro-flow-haircut-men.webp",
+    source: "https://righthair.ai/hairstyles/flow-haircut/",
+    credit: "RightHair"
+  },
+  "Textured Quiff": {
+    image: "https://media.hairtical.com/2026/03/short-textured-quiff-hardpart-haircut-69b4f139921ae.webp",
+    source: "https://www.hairtical.com/20-mens-haircuts-by-face-shape-and-hair-type/",
+    credit: "Hairtical"
+  },
+  "Side-Part Hairstyle": {
+    image: "https://setare.com/files/1402/03/29/Untitled-11-1024x683.jpg",
+    source: "https://setare.com/fa/news/510693/مدل-مو-پسرانه/",
+    credit: "Setare"
+  },
+  "Crew Cut": {
+    image: "https://manofmany.com/wp-content/uploads/2017/04/50-Short-Haircuts-and-Hairstyles-for-Men-short-hair-14.jpg",
+    source: "https://manofmany.com/fashion/mens-hairstyles/short-haircuts-and-hairstyles-for-men",
+    credit: "Man of Many"
+  },
+  "Textured Fringe": {
+    image: "https://4mama.com.ua/images/news/news/krop-strizhka-big.jpg",
+    source: "https://4mama.com.ua/ru/blog/krop-strizhka.html",
+    credit: "4mama"
+  },
+  "French Crop": {
+    image: "https://media.hairtical.com/2026/03/french-crop-haircut-fade-fringe-69b4e35ce98d2.webp",
+    fallbacks: [
+      "https://static.wixstatic.com/media/63282f_db5835bccb244c4f91a70416fd7162ca~mv2.png/v1/fill/w_980%2Ch_980%2Cal_c%2Cq_90%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/63282f_db5835bccb244c4f91a70416fd7162ca~mv2.png",
+      "https://cloud.manmoda.ru/posts/2025-04/bb901b8b4a_francuzskii-krop-v-2025.webp"
+    ],
+    source: "https://www.hairtical.com/going-super-short-15-bold-haircuts-to-consider/",
+    credit: "Hairtical"
+  }
+};
+
+function handleHairImageError(img) {
+  let fallbacks = [];
+
+  try {
+    fallbacks = JSON.parse(
+      decodeURIComponent(img.dataset.fallbacks || "%5B%5D")
+    );
+  } catch (error) {
+    fallbacks = [];
+  }
+
+  const nextIndex = Number(img.dataset.fallbackIndex || 0);
+
+  if (nextIndex < fallbacks.length) {
+    img.dataset.fallbackIndex = String(nextIndex + 1);
+    img.src = fallbacks[nextIndex];
+    return;
+  }
+
+  img.style.display = "none";
+  img.parentElement.innerHTML =
+    '<div class="empty-state">The image could not load. Use the photo reference link below to view the French Crop.</div>';
+}
+
+function renderRecommendations(shape) {
+  const data = hairstyleData[shape] || hairstyleData.Oval;
+
+  $("recIntro").textContent = data.intro;
+  $("generalTip").textContent = "Styling tip: " + data.tip;
+
+  $("hairResults").innerHTML = data.styles.map(style => {
+    const reference = hairstyleImages[style[0]] || hairstyleImages["Textured Crop"];
+    const fallbackData = encodeURIComponent(
+      JSON.stringify(reference.fallbacks || [])
+    );
+
+    return `
+      <article class="hair-card">
+        <div class="hair-image-wrap">
+          <img
+            class="hair-image"
+            src="${reference.image}"
+            data-fallbacks="${fallbackData}"
+            alt="${style[0]} hairstyle reference photo"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            onerror="handleHairImageError(this)"
+          >
+        </div>
+        <div class="hair-top">
+          <div class="hair-name">${style[0]}</div>
+          <div class="hair-length">${style[1]} hair</div>
+        </div>
+        <p>${style[2]}</p>
+        <p class="why"><strong>Why it may suit you:</strong> ${style[3]}</p>
+        <a class="hair-image-credit" href="${reference.source}" target="_blank" rel="noopener noreferrer">Photo reference: ${reference.credit} ↗</a>
+      </article>
+    `;
+  }).join("");
+}
+
+function drawMeasurements(landmarks) {
+  resetCanvas();
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  function point(index) {
+    return {
+      x: landmarks[index].x * w,
+      y: landmarks[index].y * h
+    };
+  }
+
+  const lines = [
+    [10, 152],
+    [234, 454],
+    [127, 356],
+    [172, 397]
+  ];
+
+  ctx.lineWidth = Math.max(1.5, w / 400);
+  ctx.strokeStyle = "#b58aff";
+  ctx.fillStyle = "#d9c7ff";
+
+  lines.forEach(([a, b]) => {
+    const p1 = point(a);
+    const p2 = point(b);
+
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+
+    [p1, p2].forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(2, w / 180), 0, Math.PI * 2);
+      ctx.fill();
+    });
+  });
+}
+
+const shapeProfiles = {
+  Oval:    { ratio:1.38, forehead:0.88, jaw:0.78 },
+  Round:   { ratio:1.12, forehead:0.94, jaw:0.90 },
+  Square:  { ratio:1.22, forehead:0.94, jaw:0.94 },
+  Heart:   { ratio:1.34, forehead:0.98, jaw:0.70 },
+  Diamond: { ratio:1.34, forehead:0.80, jaw:0.70 },
+  Oblong:  { ratio:1.58, forehead:0.88, jaw:0.78 }
+};
+
+function getShapeMatches(m) {
+  const weights = { ratio:1.0, forehead:0.75, jaw:0.75 };
+
+  const rows = Object.entries(shapeProfiles).map(([name, target]) => {
+    const distanceScore =
+      Math.abs(m.ratio - target.ratio) * weights.ratio +
+      Math.abs(m.foreheadRatio - target.forehead) * weights.forehead +
+      Math.abs(m.jawRatio - target.jaw) * weights.jaw;
+
+    return { name, distanceScore };
+  }).sort((a,b) => a.distanceScore - b.distanceScore);
+
+  const best = rows[0];
+  const second = rows[1];
+
+  const match = Math.max(
+    35,
+    Math.min(96, Math.round(100 - best.distanceScore * 45))
+  );
+
+  return { match, alternative: second };
+}
+
+function proportionDescription(value, low, high, lowText, highText) {
+  if (value < low) return lowText;
+  if (value > high) return highText;
+  return "Within a middle range";
+}
+
+function renderDetailedAnalysis(m, result, matches) {
+  const lengthText = proportionDescription(
+    m.ratio, 1.22, 1.48, "Relatively short", "Relatively long"
+  );
+
+  const foreheadText = proportionDescription(
+    m.foreheadRatio, 0.82, 0.96,
+    "Narrower than cheek width",
+    "Close to or wider than cheek width"
+  );
+
+  const jawText = proportionDescription(
+    m.jawRatio, 0.76, 0.90,
+    "Noticeably narrower",
+    "Relatively broad"
+  );
+
+  const balanceText =
+    (Math.abs(m.foreheadRatio - m.jawRatio) < 0.13)
+      ? "Forehead and jaw are fairly balanced"
+      : (m.foreheadRatio > m.jawRatio
+          ? "Upper face appears wider"
+          : "Lower face appears broader");
+
+  $("matchScore").textContent = matches.match + "/100";
+  $("scoreFill").style.width = matches.match + "%";
+
+  $("detailGrid").innerHTML = `
+    <div class="detail-item">
+      <span>Face length vs cheek width</span>
+      <strong>${lengthText} (${m.ratio.toFixed(2)})</strong>
+    </div>
+    <div class="detail-item">
+      <span>Forehead vs cheek width</span>
+      <strong>${foreheadText} (${m.foreheadRatio.toFixed(2)})</strong>
+    </div>
+    <div class="detail-item">
+      <span>Jaw vs cheek width</span>
+      <strong>${jawText} (${m.jawRatio.toFixed(2)})</strong>
+    </div>
+    <div class="detail-item">
+      <span>Overall balance</span>
+      <strong>${balanceText}</strong>
+    </div>
+  `;
+
+  $("alternativeShape").innerHTML =
+    `<strong>${matches.alternative.name}</strong> is the next closest pattern in this simple comparison. It is an alternative estimate, not a second diagnosis.`;
+}
+
+function downloadAnalysisReport() {
+  if (!latestAnalysis) return;
+
+  const a = latestAnalysis;
+
+  const report = `KAISAN — FACE ANALYSIS REPORT
+Made by Afeef Kaisan Sikder
+
+Estimated face shape: ${a.shape}
+Heuristic match indicator: ${a.match}/100 (not a probability)
+Closest alternative: ${a.alternative}
+
+Relative proportions
+Face length / cheek width: ${a.ratio}
+Forehead / cheek width: ${a.forehead}
+Jaw / cheek width: ${a.jaw}
+
+Note: This is a heuristic estimate based on visible MediaPipe facial landmarks. It is not a guaranteed classification or a trained face-shape AI model. Camera angle, lighting, expression, and landmark placement can affect results.
+`;
+
+  const blob = new Blob([report], {
+    type: "text/plain;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "KAISAN-Face-Analysis.txt";
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function showAnalysis(landmarks) {
+  const m = getFaceMeasurements(landmarks);
+  const result = classifyFace(m);
+  const matches = getShapeMatches(m);
+
+  $("faceShape").textContent = result.name;
+  $("faceDescription").textContent = result.description;
+
+  $("lengthValue").textContent = m.ratio.toFixed(2);
+  $("cheekValue").textContent = "1.00";
+  $("foreheadValue").textContent = m.foreheadRatio.toFixed(2);
+  $("jawValue").textContent = m.jawRatio.toFixed(2);
+
+  renderRecommendations(result.name);
+  renderDetailedAnalysis(m, result, matches);
+
+  latestAnalysis = {
+    shape: result.name,
+    match: matches.match,
+    alternative: matches.alternative.name,
+    ratio: m.ratio.toFixed(2),
+    forehead: m.foreheadRatio.toFixed(2),
+    jaw: m.jawRatio.toFixed(2)
+  };
+
+  $("downloadButton").disabled = false;
+}
+
+function onResults(results) {
+  if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+    resetCanvas();
+    setStatus("No face detected. Try a clearer, front-facing photo.");
+    return;
+  }
+
+  const landmarks = results.multiFaceLandmarks[0];
+
+  drawMeasurements(landmarks);
+  showAnalysis(landmarks);
+
+  setStatus("Face detected successfully. Your analysis is ready.");
+}
+
+async function initializeFaceMesh() {
+  if (faceMesh) return faceMesh;
+
+  if (typeof FaceMesh === "undefined") {
+    throw new Error(
+      "Face detection library did not load. Check your internet connection and refresh."
+    );
+  }
+
+  faceMesh = new FaceMesh({
+    locateFile: file =>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+  });
+
+  faceMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.6
+  });
+
+  faceMesh.onResults(onResults);
+
+  return faceMesh;
+}
+
+async function scanImage(image) {
+  try {
+    currentMode = "image";
+    placeholder.style.display = "none";
+    video.style.display = "none";
+    photo.style.display = "block";
+
+    photo.src = image;
+    await photo.decode();
+
+    setupCanvas(photo.naturalWidth, photo.naturalHeight);
+
+    setStatus("Loading face detector...");
+
+    const detector = await initializeFaceMesh();
+
+    setStatus("Analyzing your photo...");
+    await detector.send({ image: photo });
+
+  } catch (error) {
+    console.error(error);
+    setStatus(
+      error.message || "Something went wrong while scanning the photo."
+    );
+  }
+}
+
+$("fileInput").addEventListener("change", event => {
+  const file = event.target.files[0];
+
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    setStatus("Please select an image file.");
+    return;
+  }
+
+  stopCamera();
+
+  const reader = new FileReader();
+
+  reader.onload = () => scanImage(reader.result);
+  reader.readAsDataURL(file);
+});
+
+async function startCamera() {
+  try {
+    stopCamera();
+
+    currentMode = "camera";
+    setStatus("Requesting camera permission...");
+
+    const detector = await initializeFaceMesh();
+
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false
+    });
+
+    video.srcObject = cameraStream;
+    video.style.display = "block";
+    photo.style.display = "none";
+    placeholder.style.display = "none";
+
+    await video.play();
+
+    setupCanvas(video.videoWidth, video.videoHeight);
+
+    cameraRunning = true;
+    setStatus("Camera running. Look straight at the camera.");
+
+    async function cameraLoop() {
+      if (!cameraRunning) return;
+
+      if (video.readyState >= 2 && !processing) {
+        processing = true;
+
+        try {
+          await detector.send({ image: video });
+        } catch (error) {
+          console.error(error);
+        }
+
+        processing = false;
+      }
+
+      if (cameraRunning) requestAnimationFrame(cameraLoop);
+    }
+
+    cameraLoop();
+
+  } catch (error) {
+    console.error(error);
+    setStatus("Camera error: " + error.message);
+    stopCamera();
+  }
+}
+
+function stopCamera() {
+  cameraRunning = false;
+  processing = false;
+
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+
+  video.srcObject = null;
+  video.style.display = "none";
+
+  if (currentMode === "camera") {
+    placeholder.style.display = "block";
+    resetCanvas();
+    currentMode = "none";
+    setStatus("Camera stopped.");
+  }
+}
+
+$("cameraButton").addEventListener("click", startCamera);
+$("stopButton").addEventListener("click", stopCamera);
+$("downloadButton").addEventListener("click", downloadAnalysisReport);
+
+window.addEventListener("beforeunload", stopCamera);
+</script>
+
+</body>
+</html>
